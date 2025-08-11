@@ -9,9 +9,15 @@ const postRoute = require("./routes/posts");
 const multer = require("multer");
 const router = express.Router();
 const path = require("path");
+const post = require("./models/post");
 
 
 const app = express();
+app.use(cors({
+  origin: "http://deploy-mern-1whq.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}))
 dotenv.config();
 
 main().catch(err => console.log(err));
