@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://social-media-3r5v.vercel.app/api/$1"
+    }
+  ]
+}
