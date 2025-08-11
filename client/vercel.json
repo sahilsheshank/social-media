@@ -1,8 +1,9 @@
 {
-  "rewrites": [
+  "version": 2,
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://social-media-3r5v.vercel.app/api/$1"
+      "src": "/api/(.*)",
+      "dest": "https://social-media-3r5v.vercel.app/api/$1"
     }
   ]
 }
