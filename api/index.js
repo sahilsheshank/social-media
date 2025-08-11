@@ -14,7 +14,7 @@ const cors = require("cors");
 
 const app = express();
 app.use(cors({
-  origin: "https://social-media-alpha-khaki.vercel.app/",
+  origin: "https://social-media-alpha-khaki.vercel.app",
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }))
