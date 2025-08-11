@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8000', // Replace with your backend URL
+        target: 'social-media-3r5v.vercel.app', // Replace with your backend URL
       },
     },
   },
