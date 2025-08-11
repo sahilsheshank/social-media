@@ -1,6 +1,7 @@
 import "./Post.css";
 import { MoreVert } from "@mui/icons-material";
 import { useContext, useEffect, useState } from "react";
+import { FaRegComment } from "react-icons/fa";
 import axios from "axios";
 import { format } from "timeago.js";
 import { Link } from "react-router-dom";
@@ -10,8 +11,44 @@ export default function Post({ post }) {
   const [like, setLike] = useState(post.likes.length);
   const [isLiked, setIsLiked] = useState(false);
   const [user, setUser] = useState({});
+  const [commentToggle, setCommentToggle] = useState(false);
+  const [comment, setComment] = useState("");
+  const [comments, setComments] = useState([]);
+
   const PF = import.meta.env.VITE_PUBLIC_FOLDER;
   const { user: currentUser } = useContext(AuthContext);
+
+  const commentHandler = async () => {
+    if (!comment.trim()) return; // Prevent empty comment submission
+    try {
+      await axios.put(`/api/posts/${post._id}/comment`, { comment });
+      setComment(""); // Clear the input
+      fetchComments(); // Refresh the comments
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const fetchComments = async () => {
+    try {
+      const response = await fetch(`/api/posts/${post._id}/comments`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch comments");
+      }
+      const data = await response.json();
+      setComments(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchComments();
+  }, []);
+
+  const handleInputChange = (e) => {
+    setComment(e.target.value);
+  };
 
   useEffect(() => {
     setIsLiked(post.likes.includes(currentUser._id));
@@ -28,10 +65,13 @@ export default function Post({ post }) {
   const likeHandler = () => {
     try {
       axios.put("/api/posts/" + post._id + "/like", { userId: currentUser._id });
-    } catch (err) {}
+    } catch (err) {
+      console.log(err);
+    }
     setLike(isLiked ? like - 1 : like + 1);
     setIsLiked(!isLiked);
   };
+
   return (
     <div className="post">
       <div className="postWrapper">
@@ -73,12 +113,47 @@ export default function Post({ post }) {
               onClick={likeHandler}
               alt=""
             />
+            <span className="commentIcon" onClick={() => setCommentToggle(!commentToggle)}>
+              <FaRegComment size={24} />
+            </span>
             <span className="postLikeCounter">{like} people like it</span>
           </div>
           <div className="postBottomRight">
-            <span className="postCommentText">{post.comment} comments</span>
+            <span className="postCommentText">{comments.length} comments</span>
           </div>
         </div>
+
+        {/* Comment section */}
+        {commentToggle && (
+          <>
+            <div className="commentInput">
+              <input
+                name="comment"
+                className="commentInputBox"
+                type="text"
+                placeholder="Enter your comment"
+                value={comment}
+                onChange={handleInputChange}
+              />
+              <button
+                type="submit"
+                onClick={commentHandler}
+                className="commentButton"
+              >
+                +
+              </button>
+            </div>
+
+            <div className="comments-section">
+              <h3>Comments</h3>
+              <ul>
+                {comments.map((singleComment, index) => (
+                  <li key={index}>{singleComment}</li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

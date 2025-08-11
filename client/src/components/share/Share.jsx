@@ -31,12 +31,12 @@ export default function Share() {
       console.log(newPost);
       try {
         await axios.post("/api/upload", data);
-      } catch (err) {}
+      } catch (err) { }
     }
     try {
       await axios.post("/api/posts", newPost);
       window.location.reload();
-    } catch (err) {}
+    } catch (err) { }
   };
 
   return (
