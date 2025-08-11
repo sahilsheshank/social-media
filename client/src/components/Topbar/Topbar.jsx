@@ -1,12 +1,25 @@
 import "./Topbar.css";
-import { Search, Person, Chat, Notifications } from "@mui/icons-material" ;
-import { Link } from "react-router-dom";
+import { Search, Person, Chat, Notifications, Logout } from "@mui/icons-material";
+import { Link, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 
 export default function Topbar() {
-  const { user } = useContext(AuthContext);
+  const { user, dispatch } = useContext(AuthContext);
   const PF = import.meta.env.VITE_PUBLIC_FOLDER;
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+
+    navigate("/login");
+    localStorage.removeItem("user");
+
+
+    dispatch({ type: "LOGOUT" });
+
+
+  };
+
   return (
     <div className="topbarContainer">
       <div className="topbarLeft">
@@ -42,6 +55,14 @@ export default function Topbar() {
             <span className="topbarIconBadge">1</span>
           </div>
         </div>
+
+        {/* Logout Button */}
+        <button onClick={handleLogout} className="logoutButton">
+          <Logout style={{ fontSize: 20, marginRight: 4 }} />
+          Logout
+        </button>
+
+        {/* Profile Image */}
         <Link to={`/profile/${user.username}`}>
           <img
             src={

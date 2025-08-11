@@ -11,7 +11,6 @@ export default function Profile() {
   const PF = import.meta.env.VITE_PUBLIC_FOLDER;
   const [user, setUser] = useState({});
   const username = useParams().username;
-
   useEffect(() => {
     const fetchUser = async () => {
       const res = await axios.get(`/api/users?username=${username}`);

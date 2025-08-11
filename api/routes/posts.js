@@ -2,6 +2,11 @@ const router = require("express").Router();
 const Post = require("../models/post");
 const User = require("../models/user");
 
+
+// edit a post
+
+// router.
+
 //create a post
 
 router.post("/", async (req, res) => {
@@ -60,6 +65,38 @@ router.put("/:id/like", async (req, res) => {
     res.status(500).json(err);
   }
 });
+
+// comment on a post
+
+router.put("/:id/comment", async (req, res) => {
+
+  try {
+    const comment = req.body.comment;
+    const post = Post.findById(req.params.id);
+    if (post) {
+      await post.updateOne({ $push: { comments: comment } });
+      res.status(200).json("comment done")
+    }
+  } catch (error) {
+    res.status(404).json(error);
+  }
+})
+
+// Fetch all comments on a post
+router.get("/:id/comments", async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id); // Fetch the post by ID
+
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    res.status(200).json(post.comments); // Return the comments array
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch comments" });
+  }
+});
+
 //get a post
 
 router.get("/:id", async (req, res) => {

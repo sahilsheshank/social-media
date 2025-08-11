@@ -2,12 +2,13 @@ import { useContext, useRef } from "react";
 import "./login.css";
 import { loginCall } from "../../apiCalls";
 import { AuthContext } from "../../context/AuthContext";
-// import CircularProgress from '@mui/material/CircularProgress';
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const email = useRef();
   const password = useRef();
-  const { isFetching, dispatch } = useContext(AuthContext);
+  const { isFetching, dispatch, error } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const handleClick = (e) => {
     e.preventDefault();
@@ -21,9 +22,9 @@ export default function Login() {
     <div className="login">
       <div className="loginWrapper">
         <div className="loginLeft">
-          <h3 className="loginLogo">Lamasocial</h3>
+          <h3 className="loginLogo">Socials</h3>
           <span className="loginDesc">
-            Connect with friends and the world around you on Lamasocial.
+            Connect with friends and the world around you on Socials.
           </span>
         </div>
         <div className="loginRight">
@@ -44,19 +45,17 @@ export default function Login() {
               ref={password}
             />
             <button className="loginButton" type="submit" disabled={isFetching}>
-              {isFetching ? (
-                "loading"
-              ) : (
-                "Log In"
-              )}
+              {isFetching ? "Loading..." : "Log In"}
             </button>
+            {error && <span className="errorMsg">Invalid email or password</span>}
+
             <span className="loginForgot">Forgot Password?</span>
-            <button className="loginRegisterButton">
-              {isFetching ? (
-                "loading"
-              ) : (
-                "Create a New Account"
-              )}
+            <button
+              type="button"
+              onClick={() => navigate("/register")}
+              className="loginRegisterButton"
+            >
+              {isFetching ? "Loading..." : "Create a New Account"}
             </button>
           </form>
         </div>
