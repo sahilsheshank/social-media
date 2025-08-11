@@ -10,11 +10,11 @@ const multer = require("multer");
 const router = express.Router();
 const path = require("path");
 const post = require("./models/post");
-
+const cors = require("cors");
 
 const app = express();
 app.use(cors({
-  origin: "http://deploy-mern-1whq.vercel.app",
+  origin: "https://social-media-alpha-khaki.vercel.app/",
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }))
