@@ -8,20 +8,19 @@ const PostSchema = new mongoose.Schema(
     },
     desc: {
       type: String,
-      max: 500,
+      maxlength: 500,
     },
     img: {
       type: String,
     },
     likes: {
-      type: Array,
+      type: [String],
       default: [],
     },
-    comments:{
-      type:Array,
-      default:[],
-    }
-    
+    comments: {
+      type: [String],
+      default: [],
+    },
   },
   { timestamps: true }
 );

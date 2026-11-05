@@ -1,44 +1,46 @@
 const router = require("express").Router();
-const User = require("../models/user");
 const bcrypt = require("bcrypt");
+const User = require("../models/user");
+const { HttpError } = require("../middleware/errors");
+const { requireAuth, setSessionCookie, clearSessionCookie } = require("../middleware/auth");
+const { loginLimiter, registerLimiter } = require("../middleware/rateLimit");
+const { registerSchema, loginSchema } = require("../validation/schemas");
 
-// REGISTER
-router.post("/register", async (req, res) => {
-    try {
-        // Hash the password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(req.body.password, salt);
+const BCRYPT_ROUNDS = 12;
+// Compared against when the email is unknown, so response time doesn't reveal which emails exist.
+const DUMMY_HASH = bcrypt.hashSync("no-account-has-this-password", BCRYPT_ROUNDS);
 
-        // Create new user
-        const newUser = new User({
-            username: req.body.username,
-            email: req.body.email,
-            password: hashedPassword,
-        });
-
-        const savedUser = await newUser.save();
-        res.status(200).json(savedUser);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json("Server error during registration");
-    }
+router.post("/register", registerLimiter, async (req, res) => {
+  const { username, email, password } = registerSchema.parse(req.body);
+  const user = await User.create({
+    username,
+    email,
+    password: await bcrypt.hash(password, BCRYPT_ROUNDS),
+  });
+  res.status(201).json(user);
 });
 
-// LOGIN
-router.post("/login", async (req, res) => {
-    try {
-        const user = await User.findOne({ email: req.body.email });
-        if (!user) return res.status(404).json("User not found");
+router.post("/login", loginLimiter, async (req, res) => {
+  const { email, password } = loginSchema.parse(req.body);
+  // New accounts store lowercase emails. Older accounts may keep their original casing.
+  const user = await User.findOne({ email: { $in: [email, email.toLowerCase()] } }).select(
+    "+password +tokenVersion"
+  );
+  const validPassword = await bcrypt.compare(password, user ? user.password : DUMMY_HASH);
+  if (!user || !validPassword) throw new HttpError(401, "Invalid email or password");
 
-        const validPassword = await bcrypt.compare(req.body.password, user.password);
-        if (!validPassword) return res.status(400).json("Wrong password");
+  setSessionCookie(res, user);
+  res.status(200).json(user);
+});
 
-        res.status(200).json(user);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json("Server error during login");
-        alert(err.message);
-    }
+router.post("/logout", (req, res) => {
+  clearSessionCookie(res);
+  res.status(200).json({ message: "Logged out" });
+});
+
+router.get("/me", requireAuth, (req, res) => {
+  res.status(200).json(req.user);
 });
 
 module.exports = router;
+module.exports.BCRYPT_ROUNDS = BCRYPT_ROUNDS;

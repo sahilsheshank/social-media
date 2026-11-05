@@ -1,66 +1,15 @@
-const express = require("express");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const userRoute = require("./routes/users");
-const authRoute = require("./routes/auth");
-const postRoute = require("./routes/posts");
-const multer = require("multer");
-const router = express.Router();
-const path = require("path");
-const post = require("./models/post");
-const cors = require("cors");
+const config = require("./config");
+const app = require("./app");
 
-const app = express();
-app.use(cors({
-  origin: "https://social-media-alpha-khaki.vercel.app",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}))
-dotenv.config();
-
-main().catch(err => console.log(err));
-async function main() {
-  await mongoose.connect(process.env.MONGO_URL,)
-
-  // use `await mongoose.connect('mongodb://user:password@127.0.0.1:27017/test');` if your database has auth enabled
+const start = async () => {
+  await mongoose.connect(config.mongoUrl);
+  app.listen(config.port, () => {
+    console.log(`API listening on port ${config.port}`);
+  });
 };
 
-app.use("/images", express.static(path.join(__dirname, "public/images")));
-
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/images");
-  },
-  filename: (req, file, cb) => {
-    cb(null, req.body.name);
-  },
+start().catch((err) => {
+  console.error("Failed to start the API:", err);
+  process.exit(1);
 });
-
-const upload = multer({ storage: storage });
-app.post("/api/upload", upload.single("file"), (req, res) => {
-  try {
-    return res.status(200).json("File uploded successfully");
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-//middleware
-app.use(express.json());
-app.use(helmet());
-app.use(morgan("common"));
-app.use("/api/users", userRoute);
-app.use("/api/auth", authRoute);
-app.use("/api/posts", postRoute);
-
-
-
-
-
-
-app.listen(8000, () => {
-  console.log("backend server is running");
-})

@@ -1,0 +1,24 @@
+# Dependencies and build output
+node_modules/
+dist/
+
+# Secrets: copy the matching .env.example instead
+.env
+.env.*
+!.env.example
+
+# User uploads: only the bundled default images are tracked
+api/public/images/*
+!api/public/images/ad.png
+!api/public/images/gift.png
+!api/public/images/heart.png
+!api/public/images/like.png
+!api/public/images/persons/
+!api/public/images/posts/
+
+# Local tooling and stray binaries
+.vscode/
+.claude/
+*.exe
+*.log
+.DS_Store

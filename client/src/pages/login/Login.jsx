@@ -47,7 +47,7 @@ export default function Login() {
             <button className="loginButton" type="submit" disabled={isFetching}>
               {isFetching ? "Loading..." : "Log In"}
             </button>
-            {error && <span className="errorMsg">Invalid email or password</span>}
+            {error && <span className="errorMsg">{error}</span>}
 
             <span className="loginForgot">Forgot Password?</span>
             <button

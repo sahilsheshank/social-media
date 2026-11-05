@@ -7,8 +7,10 @@ import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
 
 function App() {
-  const { user } = useContext(AuthContext);
-  
+  const { user, isCheckingSession } = useContext(AuthContext);
+
+  if (isCheckingSession) return null;
+
   return (
     <Router>
       <Routes>
@@ -26,7 +28,7 @@ function App() {
         />
         <Route
           path="/profile/:username"
-          element={<Profile />}
+          element={user ? <Profile /> : <Navigate to="/login" />}
         />
       </Routes>
     </Router>

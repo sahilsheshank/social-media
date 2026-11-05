@@ -1,140 +1,74 @@
 const router = require("express").Router();
 const Post = require("../models/post");
 const User = require("../models/user");
+const { HttpError } = require("../middleware/errors");
+const { requireAuth, assertSelfOrAdmin } = require("../middleware/auth");
+const { createPostSchema, updatePostSchema, commentSchema } = require("../validation/schemas");
 
+const findPost = async (id) => {
+  const post = await Post.findById(id);
+  if (!post) throw new HttpError(404, "Post not found");
+  return post;
+};
 
-// edit a post
-
-// router.
-
-//create a post
+router.use(requireAuth);
 
 router.post("/", async (req, res) => {
-  const newPost = new Post(req.body);
-  try {
-    const savedPost = await newPost.save();
-    res.status(200).json(savedPost);
-  } catch (err) {
-    res.status(500).json(err);
-  }
+  const post = await Post.create({ ...createPostSchema.parse(req.body), userId: req.user.id });
+  res.status(201).json(post);
 });
 
-//update a post
-
-router.put("/:id", async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id);
-    if (post.userId === req.body.userId) {
-      await post.updateOne({ $set: req.body });
-      res.status(200).json("the post has been updated");
-    } else {
-      res.status(403).json("you can update only your post");
-    }
-  } catch (err) {
-    res.status(500).json(err);
-  }
+// Declared before "/:id" so that "timeline" isn't treated as a post id.
+router.get("/timeline", async (req, res) => {
+  const posts = await Post.find({ userId: { $in: [req.user.id, ...req.user.followings] } }).sort({
+    createdAt: -1,
+  });
+  res.status(200).json(posts);
 });
-//delete a post
-
-router.delete("/:id", async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id);
-    if (post.userId === req.body.userId) {
-      await post.deleteOne();
-      res.status(200).json("the post has been deleted");
-    } else {
-      res.status(403).json("you can delete only your post");
-    }
-  } catch (err) {
-    res.status(500).json(err);
-  }
-});
-//like / dislike a post
-
-router.put("/:id/like", async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id);
-    if (!post.likes.includes(req.body.userId)) {
-      await post.updateOne({ $push: { likes: req.body.userId } });
-      res.status(200).json("The post has been liked");
-    } else {
-      await post.updateOne({ $pull: { likes: req.body.userId } });
-      res.status(200).json("The post has been disliked");
-    }
-  } catch (err) {
-    res.status(500).json(err);
-  }
-});
-
-// comment on a post
-
-router.put("/:id/comment", async (req, res) => {
-
-  try {
-    const comment = req.body.comment;
-    const post = Post.findById(req.params.id);
-    if (post) {
-      await post.updateOne({ $push: { comments: comment } });
-      res.status(200).json("comment done")
-    }
-  } catch (error) {
-    res.status(404).json(error);
-  }
-})
-
-// Fetch all comments on a post
-router.get("/:id/comments", async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id); // Fetch the post by ID
-
-    if (!post) {
-      return res.status(404).json({ error: "Post not found" });
-    }
-
-    res.status(200).json(post.comments); // Return the comments array
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch comments" });
-  }
-});
-
-//get a post
-
-router.get("/:id", async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id);
-    res.status(200).json(post);
-  } catch (err) {
-    res.status(500).json(err);
-  }
-});
-
-//get timeline posts
-
-router.get("/timeline/:userId", async (req, res) => {
-  try {
-    const currentUser = await User.findById(req.params.userId);
-    const userPosts = await Post.find({ userId: currentUser._id });
-    const friendPosts = await Promise.all(
-      currentUser.followings.map((friendId) => {
-        return Post.find({ userId: friendId });
-      })
-    );
-    res.status(200).json(userPosts.concat(...friendPosts))
-  } catch (err) {
-    res.status(500).json(err);
-  }
-});
-
-//get user's all posts
 
 router.get("/profile/:username", async (req, res) => {
-  try {
-    const user = await User.findOne({ username: req.params.username });
-    const posts = await Post.find({ userId: user._id });
-    res.status(200).json(posts);
-  } catch (err) {
-    res.status(500).json(err);
-  }
+  const user = await User.findOne({ username: req.params.username }).select("_id");
+  if (!user) throw new HttpError(404, "User not found");
+  const posts = await Post.find({ userId: user.id }).sort({ createdAt: -1 });
+  res.status(200).json(posts);
 });
 
-module.exports = router
+router.get("/:id", async (req, res) => {
+  res.status(200).json(await findPost(req.params.id));
+});
+
+router.put("/:id", async (req, res) => {
+  const post = await findPost(req.params.id);
+  assertSelfOrAdmin(req, post.userId, "You can update only your post");
+  post.set(updatePostSchema.parse(req.body));
+  await post.save();
+  res.status(200).json(post);
+});
+
+router.delete("/:id", async (req, res) => {
+  const post = await findPost(req.params.id);
+  assertSelfOrAdmin(req, post.userId, "You can delete only your post");
+  await post.deleteOne();
+  res.status(200).json({ message: "The post has been deleted" });
+});
+
+router.put("/:id/like", async (req, res) => {
+  const post = await findPost(req.params.id);
+  const liked = post.likes.includes(req.user.id);
+  await post.updateOne(liked ? { $pull: { likes: req.user.id } } : { $addToSet: { likes: req.user.id } });
+  res.status(200).json({ liked: !liked });
+});
+
+router.put("/:id/comment", async (req, res) => {
+  const { comment } = commentSchema.parse(req.body);
+  const post = await findPost(req.params.id);
+  await post.updateOne({ $push: { comments: comment } });
+  res.status(200).json({ message: "Comment added" });
+});
+
+router.get("/:id/comments", async (req, res) => {
+  const post = await findPost(req.params.id);
+  res.status(200).json(post.comments);
+});
+
+module.exports = router;

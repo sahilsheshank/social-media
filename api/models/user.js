@@ -1,68 +1,79 @@
 const mongoose = require("mongoose");
 
-const UserSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema(
+  {
     username: {
-        type: String,
-        require: true,
-        min: 3,
-        max: 20,
-        unique: true,
+      type: String,
+      required: true,
+      minlength: 3,
+      maxlength: 20,
+      unique: true,
     },
     email: {
-        type: String,
-        required: true,
-        max: 50,
-        unique: true,
-
+      type: String,
+      required: true,
+      maxlength: 254,
+      unique: true,
     },
     password: {
-        type: String,
-        required: true,
-        min: 6,
+      type: String,
+      required: true,
+      select: false,
+    },
+    // Changing this invalidates every session issued before the change.
+    tokenVersion: {
+      type: Number,
+      default: 0,
+      select: false,
     },
     profilePicture: {
-        type: String,
-        default: "",
+      type: String,
+      default: "",
     },
     coverPicture: {
-        type: String,
-        default: "",
+      type: String,
+      default: "",
     },
     followers: {
-        type: Array,
-        default: [],
-
+      type: [String],
+      default: [],
     },
     followings: {
-        type: Array,
-        default: [],
-
+      type: [String],
+      default: [],
     },
     isAdmin: {
-        type: Boolean,
-        default: false,
+      type: Boolean,
+      default: false,
     },
     desc: {
-        type: String,
-        max: 50
+      type: String,
+      maxlength: 160,
     },
     city: {
-        type: String,
-        max: 50,
+      type: String,
+      maxlength: 50,
     },
     from: {
-        type: String,
-        max: 50,
+      type: String,
+      maxlength: 50,
     },
     relationship: {
-        type: Number,
-        enum: [1, 2, 3]
-    }
-
-
-
-},
-    { timestamps: true }
-
+      type: Number,
+      enum: [1, 2, 3],
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      transform: (doc, ret) => {
+        delete ret.password;
+        delete ret.tokenVersion;
+        delete ret.__v;
+        return ret;
+      },
+    },
+  }
 );
+
 module.exports = mongoose.model("User", UserSchema);

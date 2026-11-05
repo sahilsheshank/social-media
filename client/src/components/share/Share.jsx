@@ -9,34 +9,31 @@ import {
 import { useContext, useRef, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import axios from "axios";
+import { getErrorMessage } from "../../apiCalls";
 
 export default function Share() {
   const { user } = useContext(AuthContext);
   const PF = import.meta.env.VITE_PUBLIC_FOLDER;
   const desc = useRef();
   const [file, setFile] = useState(null);
+  const [error, setError] = useState("");
 
   const submitHandler = async (e) => {
     e.preventDefault();
-    const newPost = {
-      userId: user._id,
-      desc: desc.current.value,
-    };
-    if (file) {
-      const data = new FormData();
-      const fileName = Date.now() + file.name;
-      data.append("name", fileName);
-      data.append("file", file);
-      newPost.img = fileName;
-      console.log(newPost);
-      try {
-        await axios.post("/api/upload", data);
-      } catch (err) { }
-    }
+    setError("");
+    const newPost = { desc: desc.current.value };
     try {
+      if (file) {
+        const data = new FormData();
+        data.append("file", file);
+        const res = await axios.post("/api/upload", data);
+        newPost.img = res.data.filename;
+      }
       await axios.post("/api/posts", newPost);
       window.location.reload();
-    } catch (err) { }
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
   };
 
   return (
@@ -74,7 +71,7 @@ export default function Share() {
                 style={{ display: "none" }}
                 type="file"
                 id="file"
-                accept=".png,.jpeg,.jpg"
+                accept=".png,.jpeg,.jpg,.webp"
                 onChange={(e) => setFile(e.target.files[0])}
               />
             </label>
@@ -95,6 +92,11 @@ export default function Share() {
             Share
           </button>
         </form>
+        {error && (
+          <span role="alert" style={{ color: "#d32f2f", fontSize: 14 }}>
+            {error}
+          </span>
+        )}
       </div>
     </div>
   );

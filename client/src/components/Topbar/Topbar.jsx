@@ -2,6 +2,7 @@ import "./Topbar.css";
 import { Search, Person, Chat, Notifications, Logout } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { useContext } from "react";
+import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
 
 export default function Topbar() {
@@ -9,15 +10,14 @@ export default function Topbar() {
   const PF = import.meta.env.VITE_PUBLIC_FOLDER;
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-
-    navigate("/login");
-    localStorage.removeItem("user");
-
-
-    dispatch({ type: "LOGOUT" });
-
-
+  const handleLogout = async () => {
+    try {
+      await axios.post("/api/auth/logout");
+      dispatch({ type: "LOGOUT" });
+      navigate("/login");
+    } catch (err) {
+      console.log("Failed to log out:", err);
+    }
   };
 
   return (
